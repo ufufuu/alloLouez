@@ -5,5 +5,5 @@
   "type": "module",
   "scripts": {"dev":"tsx watch src/server.ts","build":"tsc","migrate":"node dist/migrate.js","start":"npm run migrate && node dist/server.js"},
   "dependencies": {"@fastify/cors":"latest","@fastify/postgres":"latest","fastify":"latest","pg":"latest","zod":"latest"},
-  "devDependencies": {"@types/node":"latest","tsx":"latest","typescript":"latest"}
+  "devDependencies": {"@types/node":"latest","@types/pg":"latest","tsx":"latest","typescript":"latest"}
 }
