@@ -1,0 +1,49 @@
+name: AlloLouez API Tests
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - 'postman/**'
+      - '.github/workflows/api-tests.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'postman/**'
+      - '.github/workflows/api-tests.yml'
+  workflow_dispatch:
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for API
+        env:
+          API_BASE_URL: ${{ vars.ALLOLOUEZ_API_URL }}
+        run: |
+          if [ -z "$API_BASE_URL" ]; then
+            echo "Repository variable ALLOLOUEZ_API_URL is not configured."
+            echo "Set it to the public Render API URL, for example https://your-service.onrender.com"
+            exit 1
+          fi
+          for i in {1..12}; do
+            if curl -fsS "$API_BASE_URL/health"; then
+              echo
+              echo "API is available."
+              exit 0
+            fi
+            echo "API not ready; waiting 10 seconds..."
+            sleep 10
+          done
+          echo "API did not become available."
+          exit 1
+
+      - name: Run Postman collection
+        uses: postmanlabs/newman-action@v2
+        with:
+          collection: postman/AlloLouez.postman_collection.json
+          envVar: |
+            [{"key":"baseUrl","value":"${{ vars.ALLOLOUEZ_API_URL }}"}]
