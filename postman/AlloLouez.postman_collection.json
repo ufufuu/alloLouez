@@ -1,0 +1,173 @@
+{
+  "info": {
+    "name": "AlloLouez API Tests",
+    "_postman_id": "allolouez-api-tests",
+    "description": "Postman collection for testing the AlloLouez Fastify API. Covers health, locations, suppliers, vehicles, availability, bookings and dashboard endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://allolouez-api.onrender.com" },
+    { "key": "vehicleId", "value": "" },
+    { "key": "bookingReference", "value": "" },
+    { "key": "startDate", "value": "2030-01-10" },
+    { "key": "endDate", "value": "2030-01-12" }
+  ],
+  "item": [
+    {
+      "name": "01 - Health",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+        "const json = pm.response.json();",
+        "pm.test('API is healthy', () => pm.expect(json.ok).to.eql(true));",
+        "pm.test('Service is AlloLouez API', () => pm.expect(json.service).to.eql('allolouez-api'));"
+      ]}}]
+    },
+    {
+      "name": "02 - Locations",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/locations" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+        "pm.test('Response is an array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+      ]}}]
+    },
+    {
+      "name": "03 - Suppliers",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/suppliers" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+        "const json = pm.response.json();",
+        "pm.test('Response is an array', () => pm.expect(json).to.be.an('array'));",
+        "if (json.length) pm.expect(json[0]).to.have.property('name');"
+      ]}}]
+    },
+    {
+      "name": "04 - Vehicles - All",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/vehicles" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+        "const json = pm.response.json();",
+        "pm.test('Response is an array', () => pm.expect(json).to.be.an('array'));",
+        "pm.test('Vehicle list is not empty', () => pm.expect(json.length).to.be.greaterThan(0));",
+        "if (json.length) {",
+        "  pm.expect(json[0]).to.have.property('id');",
+        "  pm.expect(json[0]).to.have.property('name');",
+        "  pm.expect(json[0]).to.have.property('dailyRate');",
+        "  pm.collectionVariables.set('vehicleId', json[0].id);",
+        "}"
+      ]}}]
+    },
+    {
+      "name": "05 - Vehicles - Filter by City",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/vehicles?city=Lomé" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+        "const json = pm.response.json();",
+        "pm.test('Response is an array', () => pm.expect(json).to.be.an('array'));",
+        "json.forEach(v => pm.expect(v.city.toLowerCase()).to.eql('lomé'));"
+      ]}}]
+    },
+    {
+      "name": "06 - Vehicles - Filter by Type",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/vehicles?type=SUV" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+        "const json = pm.response.json();",
+        "json.forEach(v => pm.expect(v.type).to.eql('SUV'));"
+      ]}}]
+    },
+    {
+      "name": "07 - Vehicle by ID",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/vehicles/{{vehicleId}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+        "const json = pm.response.json();",
+        "pm.test('Returned ID matches selected vehicle', () => pm.expect(json.id).to.eql(pm.collectionVariables.get('vehicleId')));",
+        "pm.expect(json).to.have.property('dailyRate');"
+      ]}}]
+    },
+    {
+      "name": "08 - Vehicle by Invalid ID",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/vehicles/does-not-exist" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 404', () => pm.response.to.have.status(404));",
+        "pm.expect(pm.response.json()).to.have.property('error');"
+      ]}}]
+    },
+    {
+      "name": "09 - Availability",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/availability?city=Lomé&startDate={{startDate}}&endDate={{endDate}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+        "const json = pm.response.json();",
+        "pm.test('Search object exists', () => pm.expect(json.search).to.be.an('object'));",
+        "pm.test('Vehicles array exists', () => pm.expect(json.vehicles).to.be.an('array'));"
+      ]}}]
+    },
+    {
+      "name": "10 - Booking - Invalid Body",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"vehicleId\": \"\",\n  \"name\": \"A\",\n  \"email\": \"not-an-email\",\n  \"phone\": \"\"\n}" },
+        "url": "{{baseUrl}}/api/bookings"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+        "pm.expect(pm.response.json()).to.have.property('error');"
+      ]}}]
+    },
+    {
+      "name": "11 - Booking - Create",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"name\": \"Postman Test Customer\",\n  \"email\": \"postman-{{$timestamp}}@example.com\",\n  \"phone\": \"+22890000000\",\n  \"startDate\": \"{{startDate}}\",\n  \"endDate\": \"{{endDate}}\",\n  \"notes\": \"Created by AlloLouez Postman tests\"\n}" },
+        "url": "{{baseUrl}}/api/bookings"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+        "const json = pm.response.json();",
+        "pm.test('Booking reference exists', () => pm.expect(json.reference).to.match(/^AL-/));",
+        "pm.test('Booking status is pending', () => pm.expect(json.status).to.eql('pending'));",
+        "pm.expect(json).to.have.property('totalAmount');",
+        "pm.expect(json).to.have.property('depositAmount');",
+        "pm.collectionVariables.set('bookingReference', json.reference);"
+      ]}}]
+    },
+    {
+      "name": "12 - Booking - Conflict Check",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"name\": \"Conflict Test Customer\",\n  \"email\": \"conflict-{{$timestamp}}@example.com\",\n  \"phone\": \"+22891111111\",\n  \"startDate\": \"{{startDate}}\",\n  \"endDate\": \"{{endDate}}\"\n}" },
+        "url": "{{baseUrl}}/api/bookings"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 409 when vehicle is already booked', () => pm.response.to.have.status(409));",
+        "pm.expect(pm.response.json()).to.have.property('error');"
+      ]}}]
+    },
+    {
+      "name": "13 - Bookings",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/bookings" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+        "pm.test('Response is an array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+      ]}}]
+    },
+    {
+      "name": "14 - Dashboard",
+      "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/dashboard" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+        "const json = pm.response.json();",
+        "pm.expect(json).to.have.property('bookings');",
+        "pm.expect(json).to.have.property('vehicles');",
+        "pm.expect(json).to.have.property('suppliers');",
+        "pm.expect(json).to.have.property('revenue');",
+        "pm.expect(json.recentBookings).to.be.an('array');"
+      ]}}]
+    }
+  ]
+}
